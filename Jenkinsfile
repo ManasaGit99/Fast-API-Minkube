@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        DOCKERHUB_CREDENTIALS = credentials('dockerhub-credentials-id')  // Update with your Docker Hub credentials ID
+        DOCKERHUB_CREDENTIALS = credentials('Docker')  // Update with your Docker Hub credentials ID
         DOCKERHUB_IMAGE = 'manasadev1/fastapi-app'  // Update with your Docker Hub username and image name
     }
 
