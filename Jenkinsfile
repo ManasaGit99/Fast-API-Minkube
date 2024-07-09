@@ -1,21 +1,24 @@
 pipeline {
+
     agent any
 
+    tools {
+        jdk 'OracleJDK11'
+    }
+
     environment {
-        DOCKERHUB_CREDENTIALS = credentials('Docker')  // Update with your Docker Hub credentials ID
-        DOCKERHUB_IMAGE = 'manasadev1/fastapi-app'  // Update with your Docker Hub username and image name
+        registry = 'manasadev1/fastapi-app'
+        registryCredential = 'Docker'
     }
 
     stages {
-        stage('Checkout') {
-            steps {
-                git 'https://github.com/ManasaGit99/Fast-API-Minkube.git'  // Update with your GitHub repo URL
-            }
-        }
 
         stage('Setup Python Environment') {
             steps {
                 sh '''
+                    sudo apt-get update
+                    sudo apt-get install -y python3 python3-venv
+
                     python3 -m venv venv
                     source venv/bin/activate
                     pip install fastapi uvicorn kubernetes requests pytest
@@ -27,6 +30,7 @@ pipeline {
             steps {
                 sh '''
                     source venv/bin/activate
+                    mkdir -p reports
                     pytest --junitxml=reports/results.xml
                 '''
             }
@@ -40,7 +44,7 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
-                    dockerImage = docker.build("${env.DOCKERHUB_IMAGE}:${env.BUILD_NUMBER}", "-f Dockerfile .")
+                    dockerImage = docker.build registry + ":$BUILD_NUMBER"
                 }
             }
         }
@@ -48,12 +52,20 @@ pipeline {
         stage('Push Docker Image') {
             steps {
                 script {
-                    docker.withRegistry('https://index.docker.io/v1/', env.DOCKERHUB_CREDENTIALS) {
-                        dockerImage.push()
+                    docker.withRegistry('', registryCredential) {
+                        dockerImage.push("$BUILD_NUMBER")
+                        dockerImage.push('latest')
                     }
                 }
             }
         }
+
+        stage('Remove Unused Docker Image') {
+            steps {
+                sh "docker rmi $registry:$BUILD_NUMBER"
+            }
+        }
+
     }
 
     post {
@@ -61,4 +73,5 @@ pipeline {
             cleanWs()
         }
     }
+
 }
