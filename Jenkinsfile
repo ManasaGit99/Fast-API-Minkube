@@ -1,10 +1,5 @@
 pipeline {
-
     agent any
-
-    tools {
-        jdk 'Oracle JDK11'
-    }
 
     environment {
         registry = 'manasadev1/fastapi-app'
@@ -12,13 +7,9 @@ pipeline {
     }
 
     stages {
-
         stage('Setup Python Environment') {
             steps {
                 sh '''
-                    sudo apt-get update
-                    sudo apt-get install -y python3 python3-venv
-
                     python3 -m venv venv
                     source venv/bin/activate
                     pip install fastapi uvicorn kubernetes requests pytest
@@ -65,7 +56,6 @@ pipeline {
                 sh "docker rmi $registry:$BUILD_NUMBER"
             }
         }
-
     }
 
     post {
@@ -73,5 +63,4 @@ pipeline {
             cleanWs()
         }
     }
-
 }
